@@ -64,6 +64,7 @@ game_loop:
         test al, 4Bh
         jz .move_left
 
+        mov cx, [si]
         jmp move_dir
 
         .move_up:
@@ -98,8 +99,13 @@ game_loop:
 
             .move_body:
                 xor dx, dx
-                add cx, [si+3+bx-2]
-                test cx, 0
+                mov ax, cx
+                add ax, [si+3+bx-2]
+                mov [si+3+bx-2], ax
+                
+                ;div SCREEN_W            ; do not go down 1 line but stay on same line
+                ;test ax, 0
+
                 sub bl, 2
                 cmp bl, 0
                 jnz .move_body
@@ -127,13 +133,21 @@ game_loop:
     ; if seed hit then highlight last pixel
     ; spawn seed
     
-
-    tick:
-        mov ax, [046Ch]
-        inc ax
-        .delay:
-            cmp [046Ch], ax
-            jl .delay
+    mov bp, 4369
+    mov si, 4369
+    delay2:
+        dec bp
+        nop
+        jnz delay2
+        dec si
+        cmp si,0    
+        jnz delay2
+            
+        ;mov ax, [046Ch]
+        ;add ax, 1
+        ;.delay:
+        ;    cmp ax, [046Ch]
+        ;    jl .delay
 
     jmp game_loop
 
