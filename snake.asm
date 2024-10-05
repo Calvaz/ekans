@@ -15,13 +15,17 @@ SNAKE_COLOR equ 02h
 SEED_COLOR equ 04h
 SCREEN_W equ 320
 SCREEN_H equ 200
-DIR_UP equ -SCREEN_W
-DIR_RIGHT equ 1
-DIR_DOWN equ SCREEN_W
-DIR_LEFT equ -1
+DIR_UP equ -SCREEN_W*3
+DIR_RIGHT equ 3
+DIR_DOWN equ SCREEN_W*3
+DIR_LEFT equ -3
 SNAKE_PIX_W equ 3
 SNAKE_PIX_H equ 3
-SCALE_BY equ SNAKE_PIX_W*SNAKE_PIX_H
+SCALE_BY equ SNAKE_PIX_W*SNAKE_PIX_H*2
+
+struc GameState
+    .score resb 0
+endstruc
 
 
 ; Setup VGA video mode
@@ -91,42 +95,58 @@ game_loop:
             mov cx, DIR_LEFT
             jmp .test_opposite_direction
 
-         ;; can't move to opposite direction of head
+        ;; can't move to opposite direction of head
+        ;; input: CX = direction
         .test_opposite_direction:
             mov ax, cx
             xor ax, 0FFFFh
             inc ax
             cmp ax, [si]
             je move_dir
+
             mov [si], cx
 
         move_dir:
             mov cx, [si]
-
             mov bl, [si+2]      ; playerLength
             shl bl, 1
             mov si, playerBody
+
             .move_body:
-                mov ax, [si+bx-2-SCALE_BY]
+                mov ax, [si+bx-2-6]
                 mov [si+bx-2], ax
+
                 sub bl, 2
-                cmp bl, SCALE_BY
+                cmp bl, 6
                 jg .move_body
 
             .move_head:
-                ;cmp cx, DIR_UP
-                ;je .adjust_position
-
-                ;.adjust_position:
-                    
-
-                
                 add [si+bx-2], cx
+                push cx
+                mov cx, [si+bx-2]
+                push bx
+                mov bl, 0
+
+                ; am i hitting seed
+                .is_hitting_seed:
+                    cmp [si-15+bx], cx     ; seed pos
+                    je .new_seed
+
+                    add bl, 2
+                    cmp bl, 18
+                    jne .is_hitting_seed
+                    jmp .move_head_2
+
+                .new_seed:
+                    call random_seed_pos
+                    call add_body_piece
+                
+            .move_head_2:
+                pop bx
+                pop cx
                 sub bl, 2
                 cmp bl, 0
                 jg .move_head
-
-
     
     ; draw player
     xor ah, ah
@@ -160,8 +180,8 @@ game_loop:
     ; if seed hit then highlight last pixel
     ; spawn seed
     
-    mov bp, 40
-    mov si, 40
+    mov bp, 20000
+    mov si, 20000
     delay2:
         dec bp
         nop
@@ -209,6 +229,32 @@ random_seed_pos:
             
     pop si
     ret
+
+;; input: cx = old pos
+add_body_piece:
+    mov si, playerLength
+    lodsb
+    add byte [si], 9
+    mov bx, ax
+    mov cx, [si+bx-2-2]
+    mov [si+bx], cx
+    mov cx, [si+bx-2-4]
+    mov [si+bx+2], cx
+    mov cx, [si+bx-2-6]
+    mov [si+bx+4], cx
+    mov cx, [si+bx-2-8]
+    mov [si+bx+6], cx
+    mov cx, [si+bx-2-10]
+    mov [si+bx+8], cx
+    mov cx, [si+bx-2-12]
+    mov [si+bx+10], cx
+    mov cx, [si+bx-2-14]
+    mov [si+bx+12], cx
+    mov cx, [si+bx-2-16]
+    mov [si+bx+14], cx
+    mov cx, [si+bx-2-18]
+    mov [si+bx+16], cx
+    ret
     
 
 ;; DATA
@@ -254,9 +300,9 @@ sprite_bitmaps:
     dw 100*SCREEN_W+152
     dw 101*SCREEN_W+152
     dw 102*SCREEN_W+152
-    dw 100*SCREEN_W+151    ;; head row * column
-    dw 101*SCREEN_W+151    ;; head row + 1 * column
-    dw 102*SCREEN_W+151    ;; head row + 1 * column
+    dw 100*SCREEN_W+151
+    dw 101*SCREEN_W+151
+    dw 102*SCREEN_W+151
     dw 100*SCREEN_W+150
     dw 101*SCREEN_W+150
     dw 102*SCREEN_W+150
