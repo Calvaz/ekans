@@ -38,7 +38,7 @@ pop es
 
 mov di, sprites
 mov si, sprite_bitmaps
-mov cl, 40
+mov cl, 50
 rep movsd
 movsb
 
@@ -109,15 +109,21 @@ game_loop:
         move_dir:
             mov cx, [si]
             mov bl, [si+2]      ; playerLength
-            shl bl, 1
+            shl bx, 1
             mov si, playerBody
+            mov ax, [si+bx-6]
+            mov [si+bx], ax
+            mov ax, [si+bx-4]
+            mov [si+bx+2], ax
+            mov ax, [si+bx-2]
+            mov [si+bx+4], ax
 
             .move_body:
-                mov ax, [si+bx-2-6]
+                mov ax, [si+bx-2-18]
                 mov [si+bx-2], ax
 
-                sub bl, 2
-                cmp bl, 6
+                sub bx, 2
+                cmp bx, 18
                 jg .move_body
 
             .move_head:
@@ -125,44 +131,45 @@ game_loop:
                 push cx
                 mov cx, [si+bx-2]
                 push bx
-                mov bl, 0
+                mov bx, 0
 
                 ; am i hitting seed
                 .is_hitting_seed:
                     cmp [si-15+bx], cx     ; seed pos
                     je .new_seed
 
-                    add bl, 2
-                    cmp bl, 18
+                    add bx, 2
+                    cmp bx, 18
                     jne .is_hitting_seed
                     jmp .move_head_2
 
                 .new_seed:
                     call random_seed_pos
-                    call add_body_piece
-                
+                    add byte [si-1], 9     ; increase length
+            
             .move_head_2:
                 pop bx
                 pop cx
-                sub bl, 2
-                cmp bl, 0
+                sub bx, 2
+                cmp bx, 0
                 jg .move_head
     
     ; draw player
     xor ah, ah
     mov bl, [si-1]
-    shl bl, 1
+    shl bx, 1
     mov al, SNAKE_COLOR
-
+    
     draw_body:
         mov cx, [si+bx-2]   ; column = row + colNum
         mov di, cx
         stosb
         
-        sub bl, 2
-        cmp bl, 0
+        sub bx, 2
+        cmp bx, 0
         jg draw_body
 
+    xor bh, bh
     mov bl, 0
     mov si, seed
     mov al, SEED_COLOR
@@ -174,14 +181,8 @@ game_loop:
         cmp bl, 18
         jl draw_seed
 
-    ; spawn snake
-    ; spawn seed
-    ; save snake last pixel
-    ; if seed hit then highlight last pixel
-    ; spawn seed
-    
-    mov bp, 20000
-    mov si, 20000
+    mov bp, 100
+    mov si, 100
     delay2:
         dec bp
         nop
@@ -230,33 +231,6 @@ random_seed_pos:
     pop si
     ret
 
-;; input: cx = old pos
-add_body_piece:
-    mov si, playerLength
-    lodsb
-    add byte [si], 9
-    mov bx, ax
-    mov cx, [si+bx-2-2]
-    mov [si+bx], cx
-    mov cx, [si+bx-2-4]
-    mov [si+bx+2], cx
-    mov cx, [si+bx-2-6]
-    mov [si+bx+4], cx
-    mov cx, [si+bx-2-8]
-    mov [si+bx+6], cx
-    mov cx, [si+bx-2-10]
-    mov [si+bx+8], cx
-    mov cx, [si+bx-2-12]
-    mov [si+bx+10], cx
-    mov cx, [si+bx-2-14]
-    mov [si+bx+12], cx
-    mov cx, [si+bx-2-16]
-    mov [si+bx+14], cx
-    mov cx, [si+bx-2-18]
-    mov [si+bx+16], cx
-    ret
-    
-
 ;; DATA
 sprite_bitmaps:
     dw 0 ;; seeds position
@@ -270,12 +244,18 @@ sprite_bitmaps:
     dw 0
 
     dw DIR_RIGHT      ;; player dir
-    db 54             ;; player length
+    db 27             ;; player length
 
     ;; snake positions
-    dw 100*SCREEN_W+160    ;; head row * column
-    dw 101*SCREEN_W+160    ;; head row + 1 * column
-    dw 102*SCREEN_W+160    ;; head row + 2 * column
+    dw 100*SCREEN_W+162    ;; head row * column
+    dw 101*SCREEN_W+162    ;; head row + 1 * column
+    dw 102*SCREEN_W+162    ;; head row + 2 * column
+    dw 100*SCREEN_W+161
+    dw 101*SCREEN_W+161
+    dw 102*SCREEN_W+161
+    dw 100*SCREEN_W+160
+    dw 101*SCREEN_W+160
+    dw 102*SCREEN_W+160
     dw 100*SCREEN_W+159
     dw 101*SCREEN_W+159
     dw 102*SCREEN_W+159
@@ -285,48 +265,6 @@ sprite_bitmaps:
     dw 100*SCREEN_W+157
     dw 101*SCREEN_W+157
     dw 102*SCREEN_W+157
-    dw 100*SCREEN_W+156
-    dw 101*SCREEN_W+156
-    dw 102*SCREEN_W+156
-    dw 100*SCREEN_W+155
-    dw 101*SCREEN_W+155
-    dw 102*SCREEN_W+155
-    dw 100*SCREEN_W+154
-    dw 101*SCREEN_W+154
-    dw 102*SCREEN_W+154
-    dw 100*SCREEN_W+153
-    dw 101*SCREEN_W+153
-    dw 102*SCREEN_W+153
-    dw 100*SCREEN_W+152
-    dw 101*SCREEN_W+152
-    dw 102*SCREEN_W+152
-    dw 100*SCREEN_W+151
-    dw 101*SCREEN_W+151
-    dw 102*SCREEN_W+151
-    dw 100*SCREEN_W+150
-    dw 101*SCREEN_W+150
-    dw 102*SCREEN_W+150
-    dw 100*SCREEN_W+149
-    dw 101*SCREEN_W+149
-    dw 102*SCREEN_W+149
-    dw 100*SCREEN_W+148
-    dw 101*SCREEN_W+148
-    dw 102*SCREEN_W+148
-    dw 100*SCREEN_W+147
-    dw 101*SCREEN_W+147
-    dw 102*SCREEN_W+147
-    dw 100*SCREEN_W+146
-    dw 101*SCREEN_W+146
-    dw 102*SCREEN_W+146
-    dw 100*SCREEN_W+145
-    dw 101*SCREEN_W+145
-    dw 102*SCREEN_W+145
-    dw 100*SCREEN_W+144
-    dw 101*SCREEN_W+144
-    dw 102*SCREEN_W+144
-    dw 100*SCREEN_W+143
-    dw 101*SCREEN_W+143
-    dw 102*SCREEN_W+143
     
 
 times 510 -($-$$) db 0
