@@ -21,6 +21,7 @@ playerBody equ 0FA3Fh
 
 SNAKE_COLOR equ 02h
 SEED_COLOR equ 04h
+GAMEOVER_COLOR equ 07h
 SCREEN_W equ 320
 SCREEN_H equ 200
 DIR_UP equ -SCREEN_W*3
@@ -30,10 +31,7 @@ DIR_LEFT equ -3
 SNAKE_PIX_W equ 3
 SNAKE_PIX_H equ 3
 SCALE_BY equ SNAKE_PIX_W*SNAKE_PIX_H*2
-
-struc GameState
-    .score resb 0
-endstruc
+MOVE_SPEED equ 200
 
 
 ; Setup VGA video mode
@@ -56,6 +54,7 @@ pop ds    ; ds:si
 call random_seed_pos
 
 game_loop:
+    hlt
     ; color the background
     xor ax, ax
     xor bx, bx
@@ -143,17 +142,17 @@ game_loop:
 
                 ; am i hitting seed
                 .is_hitting_seed:
-                    cmp [si-15+bx], cx     ; seed pos
-                    je .new_seed
+                    ;cmp [si-15+bx], cx     ; seed pos
+                    ;je .new_seed
 
                     add bx, 2
                     cmp bx, 18
                     jne .is_hitting_seed
                     jmp .move_head_2
 
-                .new_seed:
-                    call random_seed_pos
-                    add byte [si-1], 9     ; increase length
+                ;.new_seed:
+                ;    call random_seed_pos
+                ;    add byte [si-1], 9     ; increase length
             
             .move_head_2:
                 pop bx
@@ -186,34 +185,28 @@ game_loop:
     mov al, SEED_COLOR
     draw_seed:
         mov di, [si+bx]
+        cmp byte [di], SNAKE_COLOR
+        je .new_seed
         stosb
 
         add bl, 2
         cmp bl, 18
         jl draw_seed
+        jmp timer
 
+        .new_seed:
+            call random_seed_pos
+            add byte [si+20], 9     ; increase length
 
+    timer:
+        inc bp
+        cmp bp, MOVE_SPEED
+        jl timer
+        jmp game_loop
 
-    mov bp, 100
-    mov si, 100
-    delay2:
-        dec bp
-        nop
-        jnz delay2
-        dec si
-        cmp si, 0
-        jnz delay2
-
-    jmp game_loop
 
 game_over:
-    ; color the background
-    xor di, di
-    xor ax, ax
-    mov cx, SCREEN_W*SCREEN_H
-    rep stosb
-
-    mov di, 90*SCREEN_W+130
+    mov di, 90*SCREEN_W+120
     mov si, letter_g
     call draw_letter
     mov si, letter_a
@@ -231,8 +224,8 @@ game_over:
     mov si, letter_r
     call draw_letter
 
-    ;cli
-    ;hlt
+    cli
+    hlt
 
 
 draw_letter:
@@ -253,7 +246,7 @@ draw_pixels:
     .draw_pixel_loop:
         test al, 10000000b
         jz .skip_pixel
-        mov byte [di], 05h
+        mov byte [di], GAMEOVER_COLOR
 
     .skip_pixel:
         inc di
@@ -331,12 +324,12 @@ sprite_bitmaps:
     db 01111100b
 
 ;o_bitmap:
-    db 01111100b
+    db 00111100b
     db 01000010b
     db 01000010b
     db 01000010b
     db 01000010b
-    db 01111100b
+    db 00111100b
 
 ;v_bitmap:
     db 01000001b
@@ -348,11 +341,11 @@ sprite_bitmaps:
 
 ;r_bitamp:
     db 01111100b
-    db 01000011b
-    db 01000011b
+    db 01000010b
+    db 01000010b
     db 01111100b
     db 01001000b
-    db 01000100b
+    db 01000110b
 
     dw 0 ;; seeds position
     dw 0
@@ -386,8 +379,6 @@ sprite_bitmaps:
     dw 100*SCREEN_W+157
     dw 101*SCREEN_W+157
     dw 102*SCREEN_W+157
-
-
 
     
 
