@@ -118,12 +118,6 @@ game_loop:
             mov bl, [si+2]      ; playerLength
             shl bx, 1
             mov si, playerBody
-            mov ax, [si+bx-6]
-            mov [si+bx], ax
-            mov ax, [si+bx-4]
-            mov [si+bx+2], ax
-            mov ax, [si+bx-2]
-            mov [si+bx+4], ax
 
             .move_body:
                 mov ax, [si+bx-2-18]
