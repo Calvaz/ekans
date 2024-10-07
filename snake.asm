@@ -31,7 +31,7 @@ DIR_LEFT equ -3
 SNAKE_PIX_W equ 3
 SNAKE_PIX_H equ 3
 SCALE_BY equ SNAKE_PIX_W*SNAKE_PIX_H*2
-MOVE_SPEED equ 200
+MOVE_SPEED equ 240
 
 
 ; Setup VGA video mode
@@ -135,28 +135,6 @@ game_loop:
 
             .move_head:
                 add [si+bx-2], cx
-                push cx
-                mov cx, [si+bx-2]
-                push bx
-                mov bx, 0
-
-                ; am i hitting seed
-                .is_hitting_seed:
-                    ;cmp [si-15+bx], cx     ; seed pos
-                    ;je .new_seed
-
-                    add bx, 2
-                    cmp bx, 18
-                    jne .is_hitting_seed
-                    jmp .move_head_2
-
-                ;.new_seed:
-                ;    call random_seed_pos
-                ;    add byte [si-1], 9     ; increase length
-            
-            .move_head_2:
-                pop bx
-                pop cx
                 sub bx, 2
                 cmp bx, 0
                 jg .move_head
