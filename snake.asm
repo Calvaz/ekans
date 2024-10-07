@@ -5,10 +5,18 @@ org 0x7c00
 ; A0000h
 ; Variables after screen memory
 sprites equ 0FA00h
-seed equ 0FA00h
-playerDir equ 0FA12h
-playerLength equ 0FA14h
-playerBody equ 0FA15h
+letters equ 0FA00h
+letter_g equ 0FA00h
+letter_a equ 0FA06h
+letter_m equ 0FA0Ch
+letter_e equ 0FA12h
+letter_o equ 0FA18h
+letter_v equ 0FA1Eh
+letter_r equ 0FA24h
+seed equ 0FA2Ah
+playerDir equ 0FA3Ch
+playerLength equ 0FA3Eh
+playerBody equ 0FA3Fh
 
 
 SNAKE_COLOR equ 02h
@@ -163,6 +171,9 @@ game_loop:
     draw_body:
         mov cx, [si+bx-2]   ; column = row + colNum
         mov di, cx
+
+        cmp byte [di], SNAKE_COLOR
+        je game_over
         stosb
         
         sub bx, 2
@@ -181,6 +192,8 @@ game_loop:
         cmp bl, 18
         jl draw_seed
 
+
+
     mov bp, 100
     mov si, 100
     delay2:
@@ -194,8 +207,60 @@ game_loop:
     jmp game_loop
 
 game_over:
-    cli
-    hlt
+    ; color the background
+    xor di, di
+    xor ax, ax
+    mov cx, SCREEN_W*SCREEN_H
+    rep stosb
+
+    mov di, 90*SCREEN_W+130
+    mov si, letter_g
+    call draw_letter
+    mov si, letter_a
+    call draw_letter
+    mov si, letter_m
+    call draw_letter
+    mov si, letter_e
+    call draw_letter
+    mov si, letter_o
+    call draw_letter
+    mov si, letter_v
+    call draw_letter
+    mov si, letter_e
+    call draw_letter
+    mov si, letter_r
+    call draw_letter
+
+    ;cli
+    ;hlt
+
+
+draw_letter:
+    mov cx, 6
+    .draw_row:
+        mov al, byte [si]
+        call draw_pixels
+        add di, SCREEN_W-8
+        inc si
+        loop .draw_row
+    
+    sub di, SCREEN_W*6-10
+    ret
+
+;; input AL = byte to draw
+draw_pixels:
+    mov bl, 8
+    .draw_pixel_loop:
+        test al, 10000000b
+        jz .skip_pixel
+        mov byte [di], 05h
+
+    .skip_pixel:
+        inc di
+        shl al, 1
+        dec bl
+        jnz .draw_pixel_loop
+    ret
 
 random_seed_pos:
     push si
@@ -233,6 +298,62 @@ random_seed_pos:
 
 ;; DATA
 sprite_bitmaps:
+;g_bitmap:
+    db 00111110b
+    db 01000000b
+    db 01000000b
+    db 01001110b
+    db 01000010b
+    db 00111110b
+
+;a_bitmap:
+    db 00111000b
+    db 01000100b
+    db 01000100b
+    db 01111100b
+    db 01000100b
+    db 01000100b
+
+;m_bitmap:
+    db 01000010b
+    db 01100110b
+    db 01011010b
+    db 01000010b
+    db 01000010b
+    db 01000010b
+
+;e_bitmap:
+    db 01111100b
+    db 01000000b
+    db 01111100b
+    db 01000000b
+    db 01000000b
+    db 01111100b
+
+;o_bitmap:
+    db 01111100b
+    db 01000010b
+    db 01000010b
+    db 01000010b
+    db 01000010b
+    db 01111100b
+
+;v_bitmap:
+    db 01000001b
+    db 01000001b
+    db 01000001b
+    db 00100010b
+    db 00100010b
+    db 00011100b
+
+;r_bitamp:
+    db 01111100b
+    db 01000011b
+    db 01000011b
+    db 01111100b
+    db 01001000b
+    db 01000100b
+
     dw 0 ;; seeds position
     dw 0
     dw 0
@@ -265,6 +386,9 @@ sprite_bitmaps:
     dw 100*SCREEN_W+157
     dw 101*SCREEN_W+157
     dw 102*SCREEN_W+157
+
+
+
     
 
 times 510 -($-$$) db 0
