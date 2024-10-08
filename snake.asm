@@ -5,18 +5,19 @@ org 0x7c00
 ; A0000h
 ; Variables after screen memory
 sprites equ 0FA00h
-letters equ 0FA00h
-letter_g equ 0FA00h
-letter_a equ 0FA06h
-letter_m equ 0FA0Ch
-letter_e equ 0FA12h
-letter_o equ 0FA18h
-letter_v equ 0FA1Eh
-letter_r equ 0FA24h
-seed equ 0FA2Ah
-playerDir equ 0FA3Ch
-playerLength equ 0FA3Eh
-playerBody equ 0FA3Fh
+score equ 0FA00h
+letters equ 0FA01h
+letter_g equ 0FA01h
+letter_a equ 0FA07h
+letter_m equ 0FA0Dh
+letter_e equ 0FA13h
+letter_o equ 0FA19h
+letter_v equ 0FA1Fh
+letter_r equ 0FA25h
+seed equ 0FA2Bh
+playerDir equ 0FA3Dh
+playerLength equ 0FA3Fh
+playerBody equ 0FA40h
 
 
 SNAKE_COLOR equ 02h
@@ -133,17 +134,42 @@ game_loop:
                 cmp bx, 0
                 jg .move_head
     
+
+    ; draw frame
+    draw_frame:
+        xor ah, ah
+        mov di, 0
+        mov cx, SCREEN_W*2
+        mov al, GAMEOVER_COLOR
+        rep stosb
+
+        mov cx, SCREEN_H-4
+        .draw_borders:
+            stosb
+            stosb
+            add di, SCREEN_W-4
+            stosb
+            stosb
+            loop .draw_borders
+
+        mov cx, SCREEN_W*2
+        mov al, GAMEOVER_COLOR
+        rep stosb
+    
+
     ; draw player
-    xor ah, ah
     mov bl, [si-1]
     shl bx, 1
     mov al, SNAKE_COLOR
     
     draw_body:
-        mov cx, [si+bx-2]   ; column = row + colNum
+        mov cx, [si+bx-2]
         mov di, cx
 
         cmp byte [di], SNAKE_COLOR
+        je game_over
+
+        cmp byte [di], GAMEOVER_COLOR
         je game_over
         stosb
         
@@ -159,6 +185,9 @@ game_loop:
         mov di, [si+bx]
         cmp byte [di], SNAKE_COLOR
         je .new_seed
+
+        cmp byte [di], SEED_COLOR
+        je .new_pos
         stosb
 
         add bl, 2
@@ -169,6 +198,10 @@ game_loop:
         .new_seed:
             call random_seed_pos
             add byte [si+20], 9     ; increase length
+            jmp timer
+
+        .new_pos:
+            call random_seed_pos
 
     timer:
         inc bp
@@ -228,7 +261,6 @@ draw_pixels:
     ret
 
 random_seed_pos:
-    push si
     rdtsc
     xor dx, dx
     mov cx, SCREEN_W*SCREEN_H - 1 + 2
@@ -236,12 +268,12 @@ random_seed_pos:
     mov ax, dx
     add ax, 2
 
+    push si
     mov si, seed
     mov cl, 0
     inc ax
     .expand_seed:
 
-        ;; TODO: TEST IF AX < 0 or AX > height
         mov bl, 0
         .fill_line:
             mov word [si], ax
@@ -263,6 +295,8 @@ random_seed_pos:
 
 ;; DATA
 sprite_bitmaps:
+    db 0  ; score
+
 ;g_bitmap:
     db 00111110b
     db 01000000b
