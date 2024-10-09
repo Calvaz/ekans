@@ -23,6 +23,7 @@ playerBody equ 0FA40h
 SNAKE_COLOR equ 02h
 SEED_COLOR equ 04h
 GAMEOVER_COLOR equ 07h
+SCORE_COLOR equ 0Eh
 SCREEN_W equ 320
 SCREEN_H equ 200
 DIR_UP equ -SCREEN_W*3
@@ -122,7 +123,7 @@ game_loop:
 
             .move_body:
                 mov ax, [si+bx-2-18]
-                mov [si+bx-2], ax
+                xchg [si+bx-2], ax
 
                 sub bx, 2
                 cmp bx, 18
@@ -177,8 +178,7 @@ game_loop:
         cmp bx, 0
         jg draw_body
 
-    xor bh, bh
-    mov bl, 0
+    mov bx, 0
     mov si, seed
     mov al, SEED_COLOR
     draw_seed:
@@ -198,10 +198,12 @@ game_loop:
         .new_seed:
             call random_seed_pos
             add byte [si+20], 9     ; increase length
+            inc byte [si-2bh]        ; increase score
             jmp timer
 
         .new_pos:
             call random_seed_pos
+            jmp draw_seed
 
     timer:
         inc bp
@@ -213,6 +215,7 @@ game_loop:
 game_over:
     mov di, 90*SCREEN_W+120
     mov si, letter_g
+    mov dl, [si-1]       ; score
     call draw_letter
     mov si, letter_a
     call draw_letter
@@ -237,27 +240,32 @@ draw_letter:
     mov cx, 6
     .draw_row:
         mov al, byte [si]
-        call draw_pixels
-        add di, SCREEN_W-8
-        inc si
-        loop .draw_row
-    
-    sub di, SCREEN_W*6-10
-    ret
 
-;; input AL = byte to draw
-draw_pixels:
-    mov bl, 8
-    .draw_pixel_loop:
-        test al, 10000000b
-        jz .skip_pixel
-        mov byte [di], GAMEOVER_COLOR
+        mov bl, 8
+        .draw_pixel_loop:
+            test al, 10000000b
+            jz .skip_pixel
+            
+            cmp dl, 0
+            jnz .color_with_score
+
+            mov byte [di], GAMEOVER_COLOR
+            jmp .skip_pixel
+
+            .color_with_score:
+                mov byte [di], SCORE_COLOR
+                dec dx
 
     .skip_pixel:
         inc di
         shl al, 1
         dec bl
         jnz .draw_pixel_loop
+        add di, SCREEN_W-8
+        inc si
+        loop .draw_row
+    
+    sub di, SCREEN_W*6-10
     ret
 
 random_seed_pos:
@@ -266,12 +274,11 @@ random_seed_pos:
     mov cx, SCREEN_W*SCREEN_H - 1 + 2
     div cx
     mov ax, dx
-    add ax, 2
+    add ax, 3
 
     push si
     mov si, seed
     mov cl, 0
-    inc ax
     .expand_seed:
 
         mov bl, 0
@@ -284,8 +291,7 @@ random_seed_pos:
             cmp bl, 3
             jl .fill_line
         
-        add ax, SCREEN_W
-        add ax, 3
+        add ax, SCREEN_W+3
         inc cl
         cmp cl, 3
         jl .expand_seed
