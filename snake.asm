@@ -186,7 +186,7 @@ game_loop:
         cmp byte [di], SNAKE_COLOR
         je .new_seed
 
-        cmp byte [di], SEED_COLOR
+        cmp byte [di], GAMEOVER_COLOR
         je .new_pos
         stosb
 
